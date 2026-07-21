@@ -52,18 +52,21 @@ def extract(data: InvoiceInput):
 
     text = data.invoice_text
 
+    # Invoice Number
     invoice_no = find(
-        r"Invoice\s*(?:No|Number)?[:#]?\s*([A-Za-z0-9\-\/]+)",
+        r"(?:Invoice(?:\s*(?:No|Number|#))?|Inv(?:oice)?\s*#?)\s*[:#-]?\s*([A-Za-z0-9\-/]+)",
         text,
     )
 
+    # Vendor
     vendor = find(
-        r"Vendor[: ]+(.+)",
+        r"(?:Vendor(?:\s+Name)?|Supplier(?:\s+Name)?|Seller|Sold\s*By|From)\s*[:\-]?\s*(.+)",
         text,
     )
 
+    # Date
     date_text = find(
-        r"Date[: ]+(.+)",
+        r"(?:Invoice\s*Date|Date)\s*[:\-]?\s*(.+)",
         text,
     )
 
@@ -74,13 +77,15 @@ def extract(data: InvoiceInput):
         except Exception:
             date = None
 
+    # Subtotal / Amount Before Tax
     subtotal = find(
-        r"(?:Subtotal|Sub\s*Total)[: ]+Rs\.?\s*([\d,]+\.\d+)",
+        r"(?:Subtotal|Sub\s*Total|Amount\s*Before\s*Tax|Net\s*Amount)\s*[:\-]?\s*(?:Rs\.?|INR|₹)?\s*([\d,]+(?:\.\d+)?)",
         text,
     )
 
+    # Tax
     tax = find(
-        r"(?:GST.*?|Tax.*?)[: ]+Rs\.?\s*([\d,]+\.\d+)",
+        r"(?:GST.*?|CGST.*?|SGST.*?|IGST.*?|Tax.*?)\s*[:\-]?\s*(?:Rs\.?|INR|₹)?\s*([\d,]+(?:\.\d+)?)",
         text,
     )
 

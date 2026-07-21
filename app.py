@@ -15,8 +15,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class InvoiceInput(BaseModel):
     invoice_text: str
+
+
+class InvoiceOutput(BaseModel):
+    invoice_no: str | None = None
+    date: str | None = None
+    vendor: str | None = None
+    amount: float | None = None
+    tax: float | None = None
+    currency: str | None = None
 
 
 def find(pattern, text, flags=re.IGNORECASE):
@@ -33,11 +43,11 @@ def money(value):
 
     try:
         return float(value)
-    except:
+    except ValueError:
         return None
 
 
-@app.post("/extract")
+@app.post("/extract", response_model=InvoiceOutput)
 def extract(data: InvoiceInput):
 
     text = data.invoice_text
@@ -61,11 +71,11 @@ def extract(data: InvoiceInput):
     if date_text:
         try:
             date = parser.parse(date_text, dayfirst=True).strftime("%Y-%m-%d")
-        except:
-            pass
+        except Exception:
+            date = None
 
     subtotal = find(
-        r"(?:Subtotal|Sub Total)[: ]+Rs\.?\s*([\d,]+\.\d+)",
+        r"(?:Subtotal|Sub\s*Total)[: ]+Rs\.?\s*([\d,]+\.\d+)",
         text,
     )
 
@@ -74,13 +84,11 @@ def extract(data: InvoiceInput):
         text,
     )
 
-    currency = "INR"
-
     return {
         "invoice_no": invoice_no,
         "date": date,
         "vendor": vendor,
         "amount": money(subtotal),
         "tax": money(tax),
-        "currency": currency,
+        "currency": "INR",
     }
